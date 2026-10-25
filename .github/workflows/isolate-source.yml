@@ -2,7 +2,7 @@ name: Isolate egy keyboard publisher code
 on:
   push:
     branches: [main]
-    paths: ['tools/isolate_keyboard.py']
+    paths: ['tools/isolate_keyboard.py', '.github/workflows/isolate-source.yml']
 permissions:
   contents: write
 jobs:
