@@ -32,6 +32,7 @@ jobs:
           cp /tmp/aaa-original/renpet/tools/keyboard-signs-source.json tools/
           cp /tmp/aaa-original/mdwnfr/web/lexicon/{lexicon.json,manifest.json,coverage.json} release/
           cp /tmp/aaa-original/mdwnfr/data/lexicon.sqlite3 release/
+          cp -a /tmp/aaa-original/shared-language/releases ./releases
           cp /tmp/aaa-original/shared-language/README.md docs/UPSTREAM_SOURCE.md
           rm -f src/coptic_install.mjs src/publish_compiled_coptic.py src/publish_coptic_release.py
           rm -f tests/coptic_install.test.mjs
