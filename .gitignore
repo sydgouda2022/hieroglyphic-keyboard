@@ -1,2 +1,16 @@
 __pycache__/
 *.pyc
+.venv/
+venv/
+.env
+.env.*
+dist/
+dist.build/
+*.build
+*.sqlite3-journal
+*.sqlite3-wal
+*.sqlite3-shm
+.DS_Store
+node_modules/
+coverage/
+.playwright/

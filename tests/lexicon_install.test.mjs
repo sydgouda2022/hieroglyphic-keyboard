@@ -4,7 +4,7 @@ import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
 import {ensureLexiconImpl, validateManifest,validateCatalog,validateSlot} from '../src/lexicon_install.mjs';
 if (!globalThis.crypto)globalThis.crypto=webcrypto;
-const base=new URL('../releases/dev-late-egyptian/', import.meta.url);
+const base=new URL('../release/', import.meta.url);
 const content=readFileSync(new URL('lexicon.json',base));
 const manifest=JSON.parse(readFileSync(new URL('manifest.json',base)));
 const raw=content.buffer.slice(content.byteOffset,content.byteOffset+content.byteLength);
@@ -21,14 +21,14 @@ function fetcher({manifestValue=manifest,body=raw,failManifest=false,failPayload
   if(failPayload)throw Error('offline download');return {ok:true,arrayBuffer:async()=>body};
  };
 }
-test('valid catalog and manifest; real development subset never claims completeness',async()=>{
- assert.equal(validateManifest(manifest).spelling_records,728);
+test('valid catalog and manifest; canonical production release never claims completeness',async()=>{
+ assert.equal(validateManifest(manifest).spelling_records,41330);
  assert.equal(validateCatalog(JSON.parse(content.toString())).metadata.complete,false);
- assert.equal((await validateSlot(example)).payload.entries.length,728);
+ assert.equal((await validateSlot(example)).payload.entries.length,41330);
 });
 test('no existing database installs once and verifies',async()=>{
  const s=store();const a=await ensureLexiconImpl({store:s,fetcher:fetcher()});
- assert.equal(a.payload.entries.length,728);assert.equal(a.complete,false);
+ assert.equal(a.payload.entries.length,41330);assert.equal(a.complete,false);
  assert.equal(s.state.active.manifest.sha256,manifest.sha256);
 });
 test('existing good database starts completely offline',async()=>{
@@ -67,4 +67,19 @@ test('fake poisoned manifest cannot damage working installation',async()=>{
 test('never accept partial or tampered downloads',async()=>{
  const truncated=raw.slice(0,raw.byteLength-3);
  await assert.rejects(ensureLexiconImpl({store:store(),fetcher:fetcher({body:truncated})}),/checksum mismatch/);
+});
+test('malformed Unicode control sequence is rejected even with matching object shape',()=>{
+ const p=JSON.parse(content.toString());
+ p.entries[0].signs+='𓐱';
+ assert.throws(()=>validateCatalog(p),/Invalid or duplicate native spelling/);
+});
+test('manifest refuses arbitrary huge payloads',()=>{
+ assert.throws(()=>validateManifest({...manifest,bytes:500000000}),/Invalid Egyptian release manifest/);
+});
+test('download read body is part of timeout',async()=>{
+ const never=()=>new Promise(()=>{});
+ const s=store();
+ const slow=async url=>url.includes('manifest')?
+  {ok:true,json:async()=>manifest}:{ok:true,arrayBuffer:never};
+ await assert.rejects(ensureLexiconImpl({store:s,fetcher:slow,timeoutMs:10}),/timed out/);
 });

@@ -25,7 +25,7 @@ class Tests(unittest.TestCase):
    self.assertIn(('unresolved','𓎛𓏏'),counts)
    aed=Path(tmp)/'aed.xml'
    aed.write_text('<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body><entry xml:id="tla123"><form><orth>aaa</orth></form><sense><cit type="translation" xml:lang="en"><quote>test gloss</quote></cit></sense></entry></body></text></TEI>')
-   r=build_egyptian(p,aed,Path(tmp)/'result')
+   r=build_egyptian(p,aed,Path(tmp)/'result',verify_pins=False)
    self.assertGreaterEqual(r['unique_spellings'],3)
    self.assertGreaterEqual(r['aed_matched_lemmas'],1)
    db=sqlite3.connect(Path(tmp)/'result/lexicon.sqlite3')
@@ -47,7 +47,7 @@ class Tests(unittest.TestCase):
     {'encoding':'A1 Ff100','interpretations':[{'freq':1}]}
    ]}))
    with patch.object(ramses_unicode,'RAMSES_MODEL_SHA256',hashlib.sha256(src.read_bytes()).hexdigest()):
-    report=build_egyptian(tla,aed,root/'out',ramses_path=src)
+    report=build_egyptian(tla,aed,root/'out',ramses_path=src,verify_pins=False)
    self.assertEqual(report['ramses_new_spelling_records'],1)
    self.assertEqual(report['ramses_duplicate_existing_surfaces'],1)
    self.assertEqual(report['distinct_lemmas'],1)

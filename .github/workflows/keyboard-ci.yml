@@ -1,4 +1,4 @@
-name: Audit independent keyboard source and canonical release
+name: Audit and package standalone Hieroglyphic Keyboard
 on:
   push:
     branches: [main]
@@ -9,38 +9,65 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 15
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
-        with: {python-version: '3.12'}
+        with:
+          python-version: '3.12'
       - uses: actions/setup-node@v5
-        with: {node-version: '24'}
-      - name: Validate provenance, SQLite and JSON SHA-256 release
+        with:
+          node-version: '24'
+      - name: Verify canonical release, sign projection and provenance
         run: |
           set -euo pipefail
-          python - <<'PY'
+          python tools/build_keyboard_signs.py --check
+          PYTHONPATH=src python - <<'PY'
           import hashlib,json,sqlite3
           from pathlib import Path
+          from source_registry import read_registry
+          registry=read_registry()
+          assert registry['policy']['complete'] is False
           p=Path('release')
           manifest=json.loads((p/'manifest.json').read_text())
-          content=(p/'lexicon.json').read_bytes()
-          if hashlib.sha256(content).hexdigest()!=manifest['sha256']:raise ValueError('Payload integrity failure')
-          if len(content)!=manifest['bytes']:raise ValueError('Payload byte length mismatch')
-          j=json.loads(content)
-          rows=j['rows'] if manifest['language']=='cop' else j['entries']
-          if len(rows)!=manifest['spelling_records']:raise ValueError('Lexicon rows mismatch')
-          assert manifest['spelling_records']==41330
+          raw=(p/'lexicon.json').read_bytes()
+          assert hashlib.sha256(raw).hexdigest()==manifest['sha256']
+          assert len(raw)==manifest['bytes']
+          payload=json.loads(raw)
+          assert manifest['complete'] is False
+          assert payload['metadata']['complete'] is False
+          assert len(payload['entries'])==manifest['spelling_records']==41330
           with sqlite3.connect(p/'lexicon.sqlite3') as db:
               assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+              count=db.execute('select count(*) from spelling').fetchone()[0]
+              assert count==len(payload['entries'])
+              dbrows={r[0]:(r[1],r[2]) for r in db.execute('select id,native_form,frequency from spelling')}
+              assert all(dbrows[e['ref']]==(e['signs'],e['attestations']) for e in payload['entries'])
           provenance=json.loads(Path('SOURCE_PROVENANCE.json').read_text())
-          assert provenance['origin']=='sydgouda2022/aaa'
           assert provenance['release_sha256']==manifest['sha256']
-          print('Release validated:',manifest['language'],len(rows),manifest['sha256'])
           PY
-      - name: Regression tests for native-script predictor and integrity
+      - name: Native Unicode predictor and installer regression tests
         run: |
           set -euo pipefail
-          node --test tests/keyboard_search.test.mjs tests/predict.test.mjs tests/lexicon_install.test.mjs
+          node --test tests/*.test.mjs
           PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
-          python -m compileall -q src
+          python -m compileall -q src tools
+      - name: Build standalone offline-capable web application
+        run: |
+          set -euo pipefail
+          python tools/build_app.py --out dist
+          test -f dist/index.html
+          test -f dist/_generic_search.mjs
+          test -f dist/lexicon/lexicon.json
+          test -f dist/font.ttf
+          test -f dist/OFL-NotoEgyptian.txt
+          node --check dist/app.mjs
+          node --check dist/sw.js
+          node --check dist/keyboard_search.mjs
+          node --check dist/lexicon_install.mjs
+      - name: Upload standalone PWA build
+        uses: actions/upload-artifact@v4
+        with:
+          name: hieroglyphic-keyboard-static-site
+          path: dist/
+          if-no-files-found: error

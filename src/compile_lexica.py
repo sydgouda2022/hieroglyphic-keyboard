@@ -21,6 +21,7 @@ import unicodedata
 import xml.etree.ElementTree as ET
 
 from hieroglyphic_unicode import native_word,has_format_controls
+from source_registry import verify_source_files
 
 TEI='{http://www.tei-c.org/ns/1.0}'
 
@@ -124,12 +125,20 @@ def persist_json(path, payload):
     Path(path).parent.mkdir(parents=True,exist_ok=True)
     Path(path).write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
 
-def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses_path=None):
+def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses_path=None,*,verify_pins=True):
     """Produce one stage-filtered SQLite master and identical browser spellings.
 
+    Production builds reject source files whose bytes differ from registry pins.
+    Tests can explicitly pass verify_pins=False for synthetic fixture inputs.
     AES never enters by historical date alone. The source file must match its
     pinned SHA-256 and each document ID must have explicit philological approval.
     """
+    if verify_pins:
+        pins={'TLA-LE19':tla_path}
+        if aed_path:pins['AED-TEI']=aed_path
+        if aes_path:pins['AES-LATE-CURATED']=aes_path
+        if ramses_path:pins['RAMSES-WORD-MODEL-2023']=ramses_path
+        verify_source_files(pins)
     out=Path(out);out.mkdir(parents=True,exist_ok=True)
     counts,evidence,stats=source_rows(tla_path)
     aed=aed_metadata(aed_path) if aed_path else {}

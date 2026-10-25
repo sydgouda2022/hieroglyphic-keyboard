@@ -1,53 +1,43 @@
-"""Build Unicode sign pages for the MDWNFR-style three-tab keyboard.
-
-MIT source: https://github.com/MichalPaszkiewicz/hieroglyph
-The upstream data classifies phonograms by their sounds. Python's Unicode
-names provide the Gardiner ID -> Unicode codepoint mapping. No transliteration
-is shown to Renpet users; sound values are internal metadata only.
-"""
+#!/usr/bin/env python3
+"""Generate the Renpet-friendly sign pages from the ONE approved catalog."""
+from __future__ import annotations
+import argparse
 import json
-import re
-import unicodedata
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[1]
-SOURCE = ROOT / 'tools/keyboard-signs-source.json'
-TARGET = ROOT / 'release/signs.json'
+ROOT=Path(__file__).resolve().parents[1]
+SOURCE=ROOT/"src/keyboard_catalog.js"
+TARGET=ROOT/"release/signs.json"
+MARK="export const SIGN_CATALOG="
 
-def gardiner_to_unicode(gardiner: str) -> str | None:
-    output = ''
-    for piece in gardiner.split():
-        match = re.fullmatch(r'([A-Za-z]+)(\d+)([a-zA-Z]?)', piece)
-        if not match:
-            return None
-        category, number, suffix = match.groups()
-        # Unicode names use an uppercase AA prefix and zero-padded numbers
-        name = f'EGYPTIAN HIEROGLYPH {category.upper()}{int(number):03d}{suffix.upper()}'
-        try:
-            output += unicodedata.lookup(name)
-        except KeyError:
-            return None
-    return output
+def project(source: str) -> dict:
+    if MARK not in source:
+        raise ValueError("Catalog export was not found")
+    data=json.loads(source.split(MARK,1)[1].strip().rstrip(";"))
+    mapping={"uni":"single","bi":"dual","tri":"triple"}
+    pages={}
+    for page,group in mapping.items():
+        seen=set()
+        output=[]
+        for item in data[group]:
+            code,glyph=item["code"],item["glyph"]
+            if not code or not glyph or code in seen:
+                raise ValueError("Duplicate/invalid sign: "+repr(code))
+            seen.add(code)
+            output.append([glyph,code])
+        if not output:raise ValueError("Empty sign page: "+page)
+        pages[page]=output
+    return {"schema":1,"source":"src/keyboard_catalog.js","pages":pages}
 
 def main():
-    source = json.loads(SOURCE.read_text(encoding='utf-8'))
-    groups = {}
-    for key in ['uni', 'bi', 'tri']:
-        seen = set()
-        rows = []
-        for gardiner, sound in source[key]:
-            text = gardiner_to_unicode(gardiner)
-            if not text or gardiner in seen:
-                continue
-            seen.add(gardiner)
-            rows.append([text, gardiner])
-        groups[key] = rows
-        if len(rows) < {'uni':20,'bi':70,'tri':45}[key]:
-            raise RuntimeError(f'Phonogram page {key} unexpectedly sparse: {len(rows)}')
-    payload = dict(schema=1, source=source['source'], pages=groups)
-    TARGET.parent.mkdir(parents=True, exist_ok=True)
-    TARGET.write_text(json.dumps(payload, ensure_ascii=False, separators=(',',':')),encoding='utf-8')
-    print('Keyboard sign pages:', {k:len(v) for k,v in groups.items()})
+    parser=argparse.ArgumentParser()
+    parser.add_argument("--check",action="store_true")
+    args=parser.parse_args()
+    rendered=json.dumps(project(SOURCE.read_text(encoding="utf-8")),ensure_ascii=False,separators=(",",":"))+"\n"
+    if args.check:
+        if TARGET.read_text(encoding="utf-8")!=rendered:
+            raise SystemExit("Sign pages are stale. Regenerate from the source catalog.")
+    else:
+        TARGET.write_text(rendered,encoding="utf-8")
 
-if __name__ == '__main__':
-    main()
+if __name__=="__main__":main()
