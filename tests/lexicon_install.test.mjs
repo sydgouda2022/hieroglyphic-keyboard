@@ -59,7 +59,7 @@ test('cold local database installs from an explicitly supplied source',async()=>
  assert.equal(a.manifest.sha256,manifest.sha256);assert.ok(await validateSlot(s.state.active));
 });
 test('missing database without cached assets reports install required',async()=>{
- await assert.rejects(ensureLexiconImpl({store:store(),online:false,fetcher:fetcher({failManifest:true})}),/no verified local copy/);
+ await assert.rejects(ensureLexiconImpl({store:store(),online:false,fetcher:fetcher({failManifest:true})}),/No verified matching release/);
 });
 test('fake poisoned manifest cannot damage working installation',async()=>{
  const s=store(example);const a=await ensureLexiconImpl({store:s,refresh:true,fetcher:fetcher({manifestValue:{...manifest,complete:'yes'}})});
