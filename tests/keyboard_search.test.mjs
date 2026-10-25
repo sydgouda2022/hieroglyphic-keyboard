@@ -71,3 +71,16 @@ test('model-estimated frequency cannot outrank textual attestation',()=>{
 test('legacy array records cannot invent lexical verification or sources',()=>{
  assert.throws(()=>prepareKeyboardIndex('egy',{entries:[['𓄿',7,'lemma','source']]}),/legacy arrays/);
 });
+
+test('learned suggestions must be complete native Unicode, never Latin or malformed operators',()=>{
+ const expected=predictKeyboard(index,'𓄿',{limit:9,learned:{
+  'egy:𓄿𓆓':2,
+  'egy:𓄿abc':8,
+  'egy:𓄿𓐱':3,
+  'egy:𓄿𓐱𓈖':7
+ }});
+ assert.ok(expected.some(x=>x.text==='𓄿𓆓'&&x.personal));
+ assert.ok(expected.some(x=>x.text==='𓄿𓐱𓈖'&&x.personal));
+ assert.ok(!expected.some(x=>x.text==='𓄿abc'||x.text==='𓄿𓐱'));
+ assert.deepEqual(predictKeyboard(index,'nfr',{learned:{'egy:nfra':100}}).map(x=>x.text),['nfr']);
+});

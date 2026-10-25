@@ -8,7 +8,7 @@ evidence/source metadata, structural Unicode validation and optional verified
 local-first dictionary installation. Renpet, MdwNfr and future applications own
 their own interfaces, editors, storage for documents and deployment.
 
-## Public API v2.0.0
+## Public API v2.0.1
 
 ```js
 import {createKeyboardFromData,createHieroglyphicKeyboard} from
@@ -67,6 +67,11 @@ trusted origin and set `expectedSha256`.
 Detailed interfaces, error handling and examples:
 **[docs/INTEGRATION.md](docs/INTEGRATION.md)**.
 
+**Release isolation:** the default IndexedDB name includes the app namespace
+and, when provided, the expected SHA-256 fingerprint. Multiple pinned corpus
+editions do not overwrite one another. The first use of this storage layout may
+require a fresh download; custom storage adapters remain caller-owned.
+
 ## Source/maintenance layout
 
 | Path | Purpose |
@@ -91,8 +96,9 @@ python -m compileall -q src tools
 python tools/export_api.py --out dist-api
 ```
 
-CI verifies the committed JSON and SQLite data row-by-row and builds the
-headless distribution artifact. API v2 is a breaking upgrade from the earlier
+CI verifies the committed JSON and SQLite data row-by-row, exercises Unicode
+validator parity between Python and JavaScript, checks full-corpus indexing and
+prediction workloads, and builds the headless distribution artifact. API v2 is a breaking upgrade from the earlier
 experimental v1 Web Component interface; consumers must migrate deliberately.
 
 ## Evidence and rights

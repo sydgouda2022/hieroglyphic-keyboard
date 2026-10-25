@@ -1,4 +1,4 @@
-# Hieroglyphic Keyboard API v2 — Integration Contract
+# Hieroglyphic Keyboard API v2.0.1 — Integration Contract
 
 This package is **headless only**. There is no PWA, embedded keyboard component,
 visual styling layer, browser service worker, HTTP server or standalone editor.
@@ -58,7 +58,13 @@ If the browser already has the correct verified release, it is reused
 **without a network request**; `refresh:true` explicitly rechecks the remote
 manifest. `expectedSha256` applies to cached, restored and remote releases.
 By default a dictionary fetch can take up to 30 seconds; callers may override
-`timeoutMs` (milliseconds).
+`timeoutMs` (milliseconds). The default IndexedDB store is scoped by
+`storageNamespace` **and** a provided `expectedSha256`, so different pinned
+dictionary releases never overwrite one another. Migrating from the prior
+storage layout may involve one new download; consumers supplying their own
+store manage isolation themselves. Distinct injected fetchers are never
+mistakenly coalesced into one request. Personal learned suggestions must be
+well-formed native Egyptian Unicode; typed raw text itself is always retained.
 
 ## Public return shape
 

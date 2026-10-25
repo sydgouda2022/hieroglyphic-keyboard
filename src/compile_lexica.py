@@ -1,33 +1,23 @@
-"""Independent Late Egyptian lexicon compiler. No other language is compiled.
-"""
+"""Independent Late Egyptian lexicon compiler. No other language is compiled."""
 from __future__ import annotations
 
 import argparse
-
 import collections
-
 import hashlib
-
 import json
-
+import os
+import re
+import shutil
+import sqlite3
+import tempfile
+import unicodedata
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
-import re
-
-import sqlite3
-import os
-import shutil
-import tempfile
-
-import unicodedata
-
-import xml.etree.ElementTree as ET
-
-from hieroglyphic_unicode import native_word,has_format_controls
+from hieroglyphic_unicode import native_word, has_format_controls
 from source_registry import verify_source_files
 
 TEI='{http://www.tei-c.org/ns/1.0}'
-
 XML='{http://www.w3.org/XML/1998/namespace}'
 
 def digest(path):
@@ -235,11 +225,14 @@ def _compile_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ram
                         'attestations':frequency,'lexical_identity_verified':False})
         ramses_new+=1
     db.commit()
-    assert db.execute('PRAGMA integrity_check').fetchone()[0]=='ok'
+    if db.execute('PRAGMA integrity_check').fetchone()[0]!='ok':
+        raise ValueError('Canonical SQLite integrity check failed')
     sql_count=db.execute('SELECT COUNT(*) FROM spelling').fetchone()[0]
-    assert sql_count==len(entries)==len(known)
+    if sql_count!=len(entries) or len(entries)!=len(known):
+        raise ValueError('Canonical SQLite / JSON spelling count mismatch')
     missing=db.execute('SELECT COUNT(*) FROM spelling s WHERE NOT EXISTS(SELECT 1 FROM attestation a WHERE a.spelling_id=s.id)').fetchone()[0]
-    assert missing==0,'Every written form must retain an attestation'
+    if missing:
+        raise ValueError('A native spelling is missing provenance references')
     match_count=db.execute("SELECT COUNT(*) FROM lemma WHERE headword != ''").fetchone()[0]
     distinct_verified_lemmas=len({e['lemma'] for e in entries if not e['lemma'].startswith(('ramses-unlinked:','unresolved:'))})
     native_surfaces=len({e['signs'] for e in entries})
@@ -289,7 +282,6 @@ def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses
         if stage.exists():shutil.rmtree(stage)
 
 if __name__=='__main__':
-    import argparse
     p=argparse.ArgumentParser()
     p.add_argument('--tla',type=Path,required=True)
     p.add_argument('--aed',type=Path,required=True)

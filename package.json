@@ -1,6 +1,6 @@
 {
   "name": "@sydgouda/hieroglyphic-keyboard",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "Headless, offline-capable Egyptian Unicode hieroglyphic keyboard API",
   "private": true,
   "type": "module",

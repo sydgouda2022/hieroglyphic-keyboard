@@ -3,7 +3,7 @@
 The audit is a prerequisite for a defensible Late Egyptian stage filter.
 """
 from __future__ import annotations
-import argparse,collections,hashlib,json,sys
+import argparse,collections,hashlib,json
 from pathlib import Path
 from aes_unicode import decode_aes_hiero
 

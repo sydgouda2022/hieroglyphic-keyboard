@@ -9,7 +9,6 @@ from __future__ import annotations
 from collections import Counter,defaultdict
 from pathlib import Path
 import hashlib,json
-from aes_unicode import decode_aes_hiero
 from gardiner_unicode import decoded_aes_token
 
 AES_SAWLIT_SHA='b3d5eb695584be976b9981392eb4e149d13f447f677cf445b5a954898bc82ef4'

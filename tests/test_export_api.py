@@ -12,7 +12,7 @@ class ExportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temp:
             dest=Path(temp)/'api'
             result=export_api(dest)
-            assert result['api_version']=='2.0.0'
+            assert result['api_version']=='2.0.1'
             self.assertTrue((dest/'keyboard_api.mjs').is_file())
             self.assertTrue((dest/'keyboard_search.mjs').is_file())
             self.assertTrue((dest/'lexicon/manifest.json').is_file())

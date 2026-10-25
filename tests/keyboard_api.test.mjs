@@ -14,7 +14,7 @@ const catalog={format:'mdwnfr-predict-v1',metadata:{stage:'Late Egyptian',comple
 ]};
 test('self-referenced npm package import resolves public headless API',()=>{
  assert.equal(viaPackage,createKeyboardFromData);
- assert.equal(API_VERSION,'2.0.0');
+ assert.equal(API_VERSION,'2.0.1');
  assert.deepEqual(KEYBOARD_GROUPS,['uni','bi','tri']);
 });
 test('sign catalog is deterministic, independently usable, immutable',()=>{

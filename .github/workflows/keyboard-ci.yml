@@ -74,7 +74,7 @@ jobs:
           node --input-type=module -e "
           import {createKeyboardFromData,API_VERSION} from './dist-api/keyboard_api.mjs';
           const keyboard=createKeyboardFromData();
-          if(API_VERSION!=='2.0.0')process.exit(1);
+          if(API_VERSION!=='2.0.1')process.exit(1);
           if(keyboard.getSigns('uni').length!==27)process.exit(1);
           if(keyboard.searchSigns('M17A')[0].glyph!=='𓇌')process.exit(1);
           "

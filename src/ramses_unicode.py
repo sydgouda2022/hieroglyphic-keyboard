@@ -10,7 +10,6 @@ from hieroglyphic_unicode import native_word
 
 RAMSES_MODEL_SHA256='b399acfef9462c76f4df97794a97369c24f33dc6d87269f315e41a5d16103691'
 RAMSES_SOURCE_REV='c612a91407bddf8d546beedaf46edd5190a67eef'
-_SIGN=re.compile(r'(?i)^(?:AA|NL|NU|[A-Z])([0-9]{1,3})([A-Z]?)$')
 _TOKEN=re.compile(r'(?i)^(AA|NL|NU|[A-Z])([0-9]{1,3})([A-Z]?)$')
 # The Ramses files encode a word as space-separated MdC sign codes.
 # Any noncanonical sign, number shorthand, markup, or MdC layout operator

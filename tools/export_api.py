@@ -10,6 +10,7 @@ import shutil
 import tempfile
 
 ROOT=Path(__file__).resolve().parents[1]
+API_VERSION=json.loads((ROOT/'package.json').read_text(encoding='utf-8'))['version']
 MODULES=('keyboard_api.mjs','keyboard_search.mjs','keyboard_catalog.js','lexicon_install.mjs')
 DATA=('manifest.json','lexicon.json','coverage.json')
 
@@ -33,11 +34,11 @@ def export_api(destination:Path)->dict:
         for name in DATA:shutil.copy2(ROOT/'release'/name,stage/'lexicon'/name)
         shutil.copy2(ROOT/'docs/THIRD_PARTY_NOTICES.md',stage/'THIRD_PARTY_NOTICES.md')
         (stage/'package.json').write_text(
-          json.dumps({'type':'module','version':'2.0.0'},sort_keys=True)+'\n',encoding='utf-8')
+          json.dumps({'type':'module','version':API_VERSION},sort_keys=True)+'\n',encoding='utf-8')
         os.replace(stage,target)
     finally:
         if stage.exists():shutil.rmtree(stage)
-    return {'output':str(target),'api_version':'2.0.0',
+    return {'output':str(target),'api_version':API_VERSION,
             'lexicon_records':manifest['spelling_records'],'lexicon_sha256':manifest['sha256']}
 
 def main():
