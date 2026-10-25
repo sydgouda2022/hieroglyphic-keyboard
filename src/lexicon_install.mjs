@@ -164,7 +164,10 @@ export async function ensureLexiconImpl({
  let recovered=false;
  if(!active&&previous){await store.restore(previous.slot);active=previous;recovered=true;}
  if(active&&!refresh)return result(active,recovered?'recovered':'verified');
- if(!online&&active)return result(active,recovered?'recovered':'offline');
+ if(!online){
+  if(active)return result(active,recovered?'recovered':'offline');
+  throw Error('No verified matching local release; network access is disabled');
+ }
  let remote=null;
  try{
   remote=validateManifest(await readResponse(manifestUrl,fetcher,active?3000:timeoutMs,'json'));

@@ -77,4 +77,13 @@ class Tests(unittest.TestCase):
    self.assertEqual(len(counts),0)
    self.assertEqual(stats['unencoded_word_tokens'],2)
 
+ def test_failed_compile_leaves_no_partial_release_directory(self):
+  with tempfile.TemporaryDirectory() as tmp:
+   root=Path(tmp);corrupt=root/'broken.jsonl';corrupt.write_text('{ definitely not JSON')
+   aed=root/'aed.xml';aed.write_text('<TEI/>')
+   out=root/'output'
+   with self.assertRaises(ValueError):
+    build_egyptian(corrupt,aed,out,verify_pins=False)
+   self.assertFalse(out.exists())
+   self.assertEqual([x for x in root.iterdir() if x.name.startswith('.output.building-')],[])
 if __name__=='__main__':unittest.main()

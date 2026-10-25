@@ -40,4 +40,8 @@ class Tests(unittest.TestCase):
             aes=pathlib.Path(tmp)/'aes.json';aes.write_text('{}')
             wl=pathlib.Path(tmp)/'manifest.json';wl.write_text('{}')
             with self.assertRaisesRegex(ValueError,'differs'):curated_aes_rows(aes,wl)
+    def test_production_document_whitelist_is_pinned(self):
+        raw=(ROOT/'sources/aes_late_documents.json').read_bytes()
+        identifier=hashlib.sha1(f'blob {len(raw)}\0'.encode()+raw).hexdigest()
+        self.assertEqual(identifier,aes_late_adapter.AES_WHITELIST_BLOB)
 if __name__=='__main__':unittest.main()

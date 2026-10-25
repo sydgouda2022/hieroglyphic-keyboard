@@ -55,11 +55,11 @@ test('failed update preserves last verified release',async()=>{
  assert.equal(s.state.active.manifest.sha256,manifest.sha256);
 });
 test('cold local database installs from an explicitly supplied source',async()=>{
- const s=store();const a=await ensureLexiconImpl({store:s,online:false,fetcher:fetcher()});
+ const s=store();const a=await ensureLexiconImpl({store:s,online:true,fetcher:fetcher()});
  assert.equal(a.manifest.sha256,manifest.sha256);assert.ok(await validateSlot(s.state.active));
 });
 test('missing database without cached assets reports install required',async()=>{
- await assert.rejects(ensureLexiconImpl({store:store(),online:false,fetcher:fetcher({failManifest:true})}),/No verified matching release/);
+ await assert.rejects(ensureLexiconImpl({store:store(),online:false,fetcher:fetcher({failManifest:true})}),/network access is disabled/);
 });
 test('fake poisoned manifest cannot damage working installation',async()=>{
  const s=store(example);const a=await ensureLexiconImpl({store:s,refresh:true,fetcher:fetcher({manifestValue:{...manifest,complete:'yes'}})});
@@ -104,4 +104,11 @@ test('rejects a manifest different from the expected release before fetching pay
  await assert.rejects(ensureLexiconImpl({store:s,expectedSha256:'f'.repeat(64),
   fetcher:network}),/does not match pinned SHA-256/);
  assert.equal(payloadFetched,false);
+});
+
+test('offline cold start never makes an attempted network call',async()=>{
+ let count=0;
+ await assert.rejects(ensureLexiconImpl({store:store(),online:false,
+  fetcher:async()=>{count++;throw Error('Network must not be accessed');}}),/network access is disabled/);
+ assert.equal(count,0);
 });
