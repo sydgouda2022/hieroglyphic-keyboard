@@ -88,7 +88,7 @@ test('download read body is part of timeout',async()=>{
 test('expected checksum is enforced even against a valid cached other release',async()=>{
  await assert.rejects(
   ensureLexiconImpl({store:store(example),online:false,expectedSha256:'f'.repeat(64),
-   fetcher:()=>{throw Error('network unavailable');}}),/No verified matching release/);
+   fetcher:()=>{throw Error('network unavailable');}}),/No verified matching (local )?release/);
 });
 test('valid cached dictionary does not fetch unless refresh is requested',async()=>{
  const s=store(example);let calls=0;
