@@ -1,0 +1,45 @@
+name: Audit independent keyboard source and canonical release
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with: {python-version: '3.12'}
+      - uses: actions/setup-node@v5
+        with: {node-version: '24'}
+      - name: Validate provenance, SQLite and JSON SHA-256 release
+        run: |
+          set -euo pipefail
+          python - <<'PY'
+          import hashlib,json,sqlite3
+          from pathlib import Path
+          p=Path('release')
+          manifest=json.loads((p/'manifest.json').read_text())
+          content=(p/'lexicon.json').read_bytes()
+          if hashlib.sha256(content).hexdigest()!=manifest['sha256']:raise ValueError('Payload integrity failure')
+          if len(content)!=manifest['bytes']:raise ValueError('Payload byte length mismatch')
+          j=json.loads(content)
+          rows=j['rows'] if manifest['language']=='cop' else j['entries']
+          if len(rows)!=manifest['spelling_records']:raise ValueError('Lexicon rows mismatch')
+          assert manifest['spelling_records']==41330
+          with sqlite3.connect(p/'lexicon.sqlite3') as db:
+              assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
+          provenance=json.loads(Path('SOURCE_PROVENANCE.json').read_text())
+          assert provenance['origin']=='sydgouda2022/aaa'
+          assert provenance['release_sha256']==manifest['sha256']
+          print('Release validated:',manifest['language'],len(rows),manifest['sha256'])
+          PY
+      - name: Regression tests for native-script predictor and integrity
+        run: |
+          set -euo pipefail
+          node --test tests/keyboard_search.test.mjs tests/predict.test.mjs tests/lexicon_install.test.mjs
+          python -m compileall -q src
