@@ -1,55 +1,83 @@
-# Late Egyptian keyboard: pinned evidence and release architecture
+# Source-pinned Late Egyptian lexicon: evidence and build boundaries
 
-Status: October 25, 2026. This repository owns one standalone PWA and one Late Egyptian lexicon compiler. Renpet and MdwNfr are consumers, not dependencies.
+This repository publishes a **headless keyboard API**, not a PWA or app.
+It includes one auditable Late Egyptian source compiler and one immutable
+on-device dictionary release. No runtime call to TLA, AES, AED or MaReTE
+is required by the prediction API.
 
-## Current source-pinned release
+## Current committed data
 
-- **41,330** SQLite spelling records.
-- **40,265** distinct Unicode written surfaces.
-- **3,129** reported linked lemma identities, with unresolved alignment excluded from future verified-identity counts.
-- **34,144** extra unlinked Ramses MaReTE word-model Unicode sign sequences. These are not verified lemma identities or manuscript witness references.
-- TLA v19: 3,606 filtered sentences (not the entire historical TLA corpus).
-- AES: eight individually approved literary documents; seven supply complete Unicode word signs, adding 1,036 lemma–form pairs.
-- 10,930 model encodings could not be converted without guessing and were excluded.
-- `metadata.complete=false` is authoritative. Nothing here certifies total coverage of Late Egyptian.
+- 41,330 spelling records; 40,265 distinct Unicode written surfaces.
+- 3,129 reported resolved lemma identities according to the stored release.
+- 34,144 additional *unlinked* Ramses/MaReTE model-only written forms.
+- 3,606 TLA source sentences and 7 approved AES documents supplying complete
+  encoded Unicode spellings; an eighth approved AES document contains no
+  qualifying spellings in this particular extract.
+- 10,930 source-model encodings excluded rather than completed by guessing.
+- `complete:false` in the manifest and payload is authoritative.
 
-The exact hashes, licenses and source roles are in `sources/late_egyptian_registry.json`. Unlike access-restricted Ramsès bulk manuscript material, the particular University of Helsinki MaReTE training model used here is published under CC BY 4.0 with distinct conditions and limitations. ORAEC is a candidate only, not counted as an imported corpus.
+The current record count is not a vocabulary-size or historical completeness
+claim. MaReTE model frequency is **not** the same measurement as TLA/AES
+textual occurrence frequency. The headless predictor distinguishes them.
 
-## Authoritative flow
+## Canonical historical pipeline
 
 ```
-pinned open source files → src/compile_lexica.py
-                           → release/lexicon.sqlite3 (canonical master)
-                           → release/lexicon.json (browser projection)
-                           → src/publish_release.py → release/manifest.json
-                           → tools/build_app.py → standalone static PWA
+pinned TLA/AED/AES/MaReTE inputs + pinned approved AES document whitelist
+                         |
+             src/compile_lexica.py
+                  /          \
+  release/lexicon.sqlite3   release/lexicon.json
+                                    |
+                        src/publish_release.py
+                                    |
+                         release/manifest.json
+                                    |
+                         tools/export_api.py
+                                    |
+                    API-only browser distribution
 ```
 
-Only `compile_lexica.py` defines the canonical SQLite schema used in this release. Alternative historic builders and pack contracts are retired. The source compiler verifies registered TLA, AED, AES and MaReTE SHA-256 files by default; synthetic tests explicitly opt out. The separate AES document approval list is `sources/aes_late_documents.json`. The Ramses model encoder does not reconstruct uncertain or damaged signs.
+The compiler rejects unregistered upstream dataset bytes by SHA-256 and checks
+the approved AES whitelist's pinned Git-blob identity. Failed compiler builds
+must not replace an existing release. Publishing checks declared source
+fingerprints and native text structure before generating the manifest.
+Regeneration needs the original source datasets, not merely the compiled
+browser JSON.
 
-The browser checks the manifest size/hash and the payload's native-sign structure; it falls back to a previously verified local copy if an update fails. Hash matching authenticates neither a compromised hosting account nor a simultaneously replaced manifest and payload. No digital-signature claim is made.
-
-`src/keyboard_catalog.js` is the sole curated sign group source. `release/signs.json` is generated from it with `python tools/build_keyboard_signs.py` (or checked with `--check`). The groups are for keyboard convenience and do not imply a unique historic phonetic reading for every sign.
-
-## Rebuild sources
-
-Download the exact pinned files listed in the registry and compile:
+## Original-source reproduction
 
 ```sh
-PYTHONPATH=src python src/compile_lexica.py --tla /private/train.jsonl \
-  --aed /private/dictionary.xml --aes /private/aes_sawlit.json \
+PYTHONPATH=src python src/compile_lexica.py \
+  --tla /private/tla_late.jsonl --aed /private/aed.xml \
+  --aes /private/aes_sawlit.json \
   --aes-whitelist sources/aes_late_documents.json \
-  --ramses /private/RamsesTrainingSetModel.json --out /private/release-build
+  --ramses /private/RamsesTrainingSetModel.json \
+  --out /private/compiled-release
+
 PYTHONPATH=src python src/publish_release.py \
-  --catalog /private/release-build/lexicon.json --out /private/published
+  --catalog /private/compiled-release/lexicon.json \
+  --out /private/published-release
 ```
 
-The compiler refuses source fingerprint mismatches. Output directories should be new/empty and must be kept distinct from the tracked release. To replace the tracked release, independently compare generated SQLite rows, evidence lineage, and JSON record identities, then update the authoritative release files together.
+For actual releases, source byte verification stays enabled. Synthetic tests
+may bypass pins explicitly, but **published releases cannot**.
+The committed SQLite master and JSON projection are independently compared
+in CI for all rows and frequency/reference correspondence.
 
-## Benchmark limitations
+## Limitations
 
-The historical held-out benchmark reported 90.18% token coverage and 66.67% distinct lemma–form coverage on 13,112 scorable, complete Unicode tokens from a restricted group of AES texts. These figures are *not* validation of the expanded Ramses model, unseen documents, all genres, damaged signs or complete Late Egyptian. Re-run `src/benchmark_late_egyptian.py` with original source material to reproduce or extend the evaluation.
+The historical AES held-out benchmark applies only to its scoped documents,
+complete Unicode tokens and lemma-linked forms. It is not a prediction
+accuracy certification for unseen texts or model-only forms. A Unicode sequence
+that the structural validator accepts is not necessarily a valid Egyptian word.
 
-## Distribution
+Upstream source IDs, checksums, licensing and approved scope are in
+`sources/late_egyptian_registry.json`, `sources/README.md` and
+`docs/THIRD_PARTY_NOTICES.md`. The API exporter carries source notices
+alongside the dictionary. Reuse rights still require a separate compliance
+review, especially for CC BY-SA attribution and redistribution conditions.
 
-A built static app includes `manifest.json`, `lexicon.json`, `coverage.json`, generated signs, the font and its license, without serving the 33.9MB canonical SQLite master. The source repository retains SQLite for audits and Python consumers; browsers do not fetch it. App PWA behavior and live mobile Safari interaction need device-level verification in addition to the automated checks.
+SHA-256 checks in the local installer detect mismatched bytes but do not
+cryptographically authenticate the publisher's endpoint. Hosts should pin
+`expectedSha256` and serve approved static assets from a trusted origin.

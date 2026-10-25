@@ -8,13 +8,13 @@ if(!globalThis.crypto)globalThis.crypto=webcrypto;
 
 const catalog={format:'mdwnfr-predict-v1',metadata:{stage:'Late Egyptian',complete:false,spelling_records:3},
  entries:[
- {ref:'tla:1',signs:'𓄿𓂝',source:'TLA-LE19',lemma:'l1',attestations:4},
- {ref:'tla:2',signs:'𓄿𓈖',source:'TLA-LE19',lemma:'l2',attestations:3},
+ {ref:'tla:1',signs:'𓄿𓂝',source:'TLA-LE19',lemma:'tla19:l1',attestations:4},
+ {ref:'tla:2',signs:'𓄿𓈖',source:'TLA-LE19',lemma:'tla19:l2',attestations:3},
  {ref:'r:1',signs:'𓄿𓅓',source:'RAMSES-WORD-MODEL-2023',lexical_identity_verified:false,attestations:40}
 ]};
 test('self-referenced npm package import resolves public headless API',()=>{
  assert.equal(viaPackage,createKeyboardFromData);
- assert.equal(API_VERSION,'1.0.0');
+ assert.equal(API_VERSION,'2.0.0');
  assert.deepEqual(KEYBOARD_GROUPS,['uni','bi','tri']);
 });
 test('sign catalog is deterministic, independently usable, immutable',()=>{
@@ -68,12 +68,12 @@ test('two consuming applications have isolated store and configurable URL reques
  const a=await createHieroglyphicKeyboard({
   manifestUrl:'https://app-a.example/keyboard/manifest.json',
   lexiconUrl:'https://app-a.example/keyboard/lexicon.json',
-  storageNamespace:'renpet',store:store(),fetcher:mock
+  storageNamespace:'renpet',store:store(),fetcher:mock,expectedSha256:manifest.sha256
  });
  const b=await createHieroglyphicKeyboard({
   manifestUrl:'https://app-b.example/keyboard/manifest.json',
   lexiconUrl:'https://app-b.example/keyboard/lexicon.json',
-  storageNamespace:'mdwnfr',store:store(),fetcher:mock
+  storageNamespace:'mdwnfr',store:store(),fetcher:mock,expectedSha256:manifest.sha256
  });
  assert.equal(a.info.spellingRecords,41330);
  assert.equal(b.info.spellingRecords,41330);
@@ -98,4 +98,19 @@ test('offline verified storage works without network',async()=>{
   store:storage,online:false,fetcher:()=>{throw Error('Offline');}
  });
  assert.equal(a.info.spellingRecords,41330);
+});
+
+test('API-only package has no UI, PWA or editor dependency',async()=>{
+ const {readFileSync}=await import('node:fs');
+ const pkg=JSON.parse(readFileSync(new URL('../package.json',import.meta.url)));
+ assert.ok(!Object.keys(pkg.exports).some(key=>/ui|web|app/i.test(key)));
+ assert.equal(pkg.version,API_VERSION);
+});
+test('unresolved lemma does not become a verified identity',()=>{
+ const rows={entries:[{ref:'unresolved:1',signs:'𓄿𓈖',source:'TLA-LE19',
+  lemma:'unresolved:deadbeef',lexical_identity_verified:false,attestations:1}]};
+ const k=createKeyboardFromData({lexicon:rows});
+ const result=k.predict('𓄿',{limit:3})[1];
+ assert.equal(result.attested,true);
+ assert.equal(result.lexicalIdentityVerified,false);
 });

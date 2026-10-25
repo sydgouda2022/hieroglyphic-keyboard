@@ -12,9 +12,10 @@ from pathlib import Path
 import shutil
 import tempfile
 from hieroglyphic_unicode import native_word
+from source_registry import read_registry
 
 
-def publish(catalog: Path, destination: Path) -> dict:
+def publish(catalog: Path, destination: Path, *, verify_provenance: bool = True) -> dict:
     source=Path(catalog)
     original=source.read_bytes()
     package=json.loads(original)
@@ -26,6 +27,16 @@ def publish(catalog: Path, destination: Path) -> dict:
         metadata.get("spelling_records")!=len(entries) or type(metadata.get("complete")) is not bool
     ):
         raise ValueError("Invalid Late Egyptian release metadata")
+    if verify_provenance:
+        expected={row['id']:row['sha256'] for row in read_registry()['sources']}
+        fields={'TLA-LE19':'tla_sha256','AED-TEI':'aed_sha256',
+                'AES-LATE-CURATED':'aes_sha256','RAMSES-WORD-MODEL-2023':'ramses_model_sha256'}
+        if metadata.get('tla_sha256')!=expected['TLA-LE19']:
+            raise ValueError('Unverified TLA corpus source fingerprint')
+        for key,field in fields.items():
+            present=metadata.get(field)
+            if present is not None and present!=expected[key]:
+                raise ValueError('Unregistered corpus source fingerprint: '+key)
     refs=set()
     for item in entries:
         if not isinstance(item,dict):

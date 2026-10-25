@@ -2,7 +2,8 @@ import {test} from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {webcrypto} from 'node:crypto';
-import {ensureLexiconImpl, validateManifest,validateCatalog,validateSlot} from '../src/lexicon_install.mjs';
+import {ensureLexiconImpl as install, validateManifest,validateCatalog,validateSlot} from '../src/lexicon_install.mjs';
+const ensureLexiconImpl=options=>install({manifestUrl:'https://local.test/manifest.json',payloadUrl:'https://local.test/lexicon.json',...options});
 if (!globalThis.crypto)globalThis.crypto=webcrypto;
 const base=new URL('../release/', import.meta.url);
 const content=readFileSync(new URL('lexicon.json',base));
@@ -49,11 +50,11 @@ test('corrupt active restores previously verified snapshot offline',async()=>{
 });
 test('failed update preserves last verified release',async()=>{
  const s=store(example);const changed={...manifest,sha256:'f'.repeat(64),release:'new-release'};
- const a=await ensureLexiconImpl({store:s,fetcher:fetcher({manifestValue:changed,failPayload:true})});
+ const a=await ensureLexiconImpl({store:s,refresh:true,fetcher:fetcher({manifestValue:changed,failPayload:true})});
  assert.equal(a.manifest.sha256,manifest.sha256);
  assert.equal(s.state.active.manifest.sha256,manifest.sha256);
 });
-test('missing offline database repairs from offline PWA precache',async()=>{
+test('cold local database installs from an explicitly supplied source',async()=>{
  const s=store();const a=await ensureLexiconImpl({store:s,online:false,fetcher:fetcher()});
  assert.equal(a.manifest.sha256,manifest.sha256);assert.ok(await validateSlot(s.state.active));
 });
@@ -61,7 +62,7 @@ test('missing database without cached assets reports install required',async()=>
  await assert.rejects(ensureLexiconImpl({store:store(),online:false,fetcher:fetcher({failManifest:true})}),/no verified local copy/);
 });
 test('fake poisoned manifest cannot damage working installation',async()=>{
- const s=store(example);const a=await ensureLexiconImpl({store:s,fetcher:fetcher({manifestValue:{...manifest,complete:'yes'}})});
+ const s=store(example);const a=await ensureLexiconImpl({store:s,refresh:true,fetcher:fetcher({manifestValue:{...manifest,complete:'yes'}})});
  assert.equal(a.manifest.sha256,manifest.sha256);
 });
 test('never accept partial or tampered downloads',async()=>{
@@ -82,4 +83,25 @@ test('download read body is part of timeout',async()=>{
  const slow=async url=>url.includes('manifest')?
   {ok:true,json:async()=>manifest}:{ok:true,arrayBuffer:never};
  await assert.rejects(ensureLexiconImpl({store:s,fetcher:slow,timeoutMs:10}),/timed out/);
+});
+
+test('expected checksum is enforced even against a valid cached other release',async()=>{
+ await assert.rejects(
+  ensureLexiconImpl({store:store(example),online:false,expectedSha256:'f'.repeat(64),
+   fetcher:()=>{throw Error('network unavailable');}}),/No verified matching release/);
+});
+test('valid cached dictionary does not fetch unless refresh is requested',async()=>{
+ const s=store(example);let calls=0;
+ const got=await ensureLexiconImpl({store:s,fetcher:()=>{calls++;throw Error('Unexpected network');}});
+ assert.equal(got.manifest.sha256,manifest.sha256);assert.equal(calls,0);
+});
+test('rejects a manifest different from the expected release before fetching payload',async()=>{
+ const s=store();let payloadFetched=false;
+ const network=async url=>{
+  if(url.includes('manifest'))return {ok:true,json:async()=>manifest};
+  payloadFetched=true;return {ok:true,arrayBuffer:async()=>raw};
+ };
+ await assert.rejects(ensureLexiconImpl({store:s,expectedSha256:'f'.repeat(64),
+  fetcher:network}),/does not match pinned SHA-256/);
+ assert.equal(payloadFetched,false);
 });

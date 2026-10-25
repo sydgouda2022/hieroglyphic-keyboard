@@ -13,12 +13,19 @@ from aes_unicode import decode_aes_hiero
 from gardiner_unicode import decoded_aes_token
 
 AES_SAWLIT_SHA='b3d5eb695584be976b9981392eb4e149d13f447f677cf445b5a954898bc82ef4'
+# Exact approved document whitelist checked against its committed Git blob identity.
+AES_WHITELIST_BLOB='41d30bbcd42216ff0f36ef17c8da2df93d4736d3'
 
-def curated_aes_rows(aes_path,whitelist_path):
+def curated_aes_rows(aes_path,whitelist_path,*,verify_whitelist=True):
     raw=Path(aes_path).read_bytes()
     fingerprint=hashlib.sha256(raw).hexdigest()
     if fingerprint!=AES_SAWLIT_SHA:raise ValueError('AES edition differs from verified source bytes')
-    manifest=json.loads(Path(whitelist_path).read_text(encoding='utf-8'))
+    approved=Path(whitelist_path).read_bytes()
+    if verify_whitelist:
+        object_id=hashlib.sha1(f'blob {len(approved)}\0'.encode()+approved).hexdigest()
+        if object_id!=AES_WHITELIST_BLOB:
+            raise ValueError('Unapproved AES document whitelist revision')
+    manifest=json.loads(approved)
     if manifest.get('schema')!=1 or manifest.get('edition')!='AES 35276d2527cca1a055e31ed5f6683e777717170f':
         raise ValueError('Unapproved AES source-identity or stage whitelist')
     whitelisted={}

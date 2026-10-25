@@ -15,6 +15,9 @@ from pathlib import Path
 import re
 
 import sqlite3
+import os
+import shutil
+import tempfile
 
 import unicodedata
 
@@ -125,7 +128,7 @@ def persist_json(path, payload):
     Path(path).parent.mkdir(parents=True,exist_ok=True)
     Path(path).write_text(json.dumps(payload,ensure_ascii=False,separators=(',',':'))+'\n',encoding='utf-8')
 
-def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses_path=None,*,verify_pins=True):
+def _compile_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses_path=None,*,verify_pins=True):
     """Produce one stage-filtered SQLite master and identical browser spellings.
 
     Production builds reject source files whose bytes differ from registry pins.
@@ -181,7 +184,7 @@ def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses
             db.execute('INSERT OR IGNORE INTO attestation VALUES (?,?,?,?,?)',(att_id,record_id,'TLA-LE19',ref,sha_tla))
         known[(lemma,form)]=len(entries)
         entries.append({'ref':record_id,'signs':form,'lemma':lexical_id,
-                        'source':'TLA-LE19','primary':True,'attestations':frequency})
+                        'source':'TLA-LE19','primary':True,'attestations':frequency,'lexical_identity_verified':lemma!='unresolved'})
     added=0
     for (lemma,form),frequency in sorted(aes_counts.items()):
         lexical_id='tla19:'+lemma
@@ -269,6 +272,21 @@ def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses
             'claim':'Verified TLA and curated AES spellings plus unlinked Ramses word-model sign sequences; corpus-level Ramses evidence is not per-witness lemma attestation'}
     persist_json(out/'coverage.json',report)
     return report
+
+def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses_path=None,*,verify_pins=True):
+    """Build a complete output directory or leave no output on failure."""
+    destination=Path(out)
+    if destination.exists():
+        raise FileExistsError('Refuse to overwrite existing release: '+str(destination))
+    destination.parent.mkdir(parents=True,exist_ok=True)
+    stage=Path(tempfile.mkdtemp(prefix='.'+destination.name+'.building-',dir=destination.parent))
+    try:
+        report=_compile_egyptian(tla_path,aed_path,stage,aes_path,aes_whitelist,
+                                 ramses_path,verify_pins=verify_pins)
+        os.replace(stage,destination)
+        return report
+    finally:
+        if stage.exists():shutil.rmtree(stage)
 
 if __name__=='__main__':
     import argparse

@@ -1,61 +1,86 @@
-# Hieroglyphic Keyboard
+# Hieroglyphic Keyboard API
 
-**Reusable Egyptian Unicode keyboard library** with an optional embeddable Web
-Component and standalone test/writing PWA.
+**Headless Egyptian Unicode keyboard library.** This repository is an API
+package, **not** a standalone application, PWA, hosted service or REST endpoint.
 
-The independent source repository supplies **one** core for Renpet, MdwNfr and
-future applications. There is no required network prediction API and no dependency
-on any consuming application. The UI never owns the host's cursor/document model.
+It provides Unicode sign lookup, Late Egyptian spelling prediction, explicit
+evidence/source metadata, structural Unicode validation and optional verified
+local-first dictionary installation. Renpet, MdwNfr and future applications own
+their own interfaces, editors, storage for documents and deployment.
 
-## Modules and purpose
+## Public API v2.0.0
 
-| Source | Role |
+```js
+import {createKeyboardFromData,createHieroglyphicKeyboard} from
+  '@sydgouda/hieroglyphic-keyboard';
+
+// Sign-only core: synchronous, no browser globals, downloads or storage.
+const signs = createKeyboardFromData();
+signs.getSigns('uni');
+signs.searchSigns('M17A');
+signs.validate('𓄿𓈖');
+
+// Dictionary-assisted core: trusted, explicit, app-hosted static assets.
+// The expected SHA-256 pin prevents accidental lexicon release drift.
+const keyboard = await createHieroglyphicKeyboard({
+  manifestUrl: '/vendor/hieroglyphic/lexicon/manifest.json',
+  lexiconUrl: '/vendor/hieroglyphic/lexicon/lexicon.json',
+  expectedSha256: '48f7769c20b1560f76b0080e8ac5155b5e42c2b9fe2c1fe696f765e803dd5a39',
+  storageNamespace: 'renpet'
+});
+keyboard.predict('𓄿',{limit:6});
+console.log(keyboard.info); // release metadata, incomplete coverage flag
+```
+
+The API never changes a host document. Prediction is always initiated by the
+consumer, never by a background keyboard service. It does not require an
+internet connection after a verified dictionary has been installed. A
+`createKeyboardFromData({lexicon})` constructor is available for already trusted
+local data, but does **not** itself verify the dictionary's SHA-256.
+
+The corpus contains **41,330 spelling records** (40,265 distinct Unicode
+surfaces). Its historical coverage is explicitly **incomplete**. The 34,144
+unlinked Ramses/MaReTE model-only forms are not verified lemmata or individual
+manuscript witnesses. Prediction data distinguishes textual attestations
+from model-only forms. Legacy array records are rejected because they discard
+that distinction.
+
+## Browser integration without a hosted service
+
+The package is currently **unpublished** and marked private because
+redistribution rights must be reviewed. Consumers can pin a Git commit or
+copy an exact static API export from CI:
+
+```sh
+python tools/export_api.py --out dist-api
+```
+
+`dist-api/` contains JavaScript modules, `lexicon/manifest.json`,
+`lexicon/lexicon.json`, coverage metadata and data-source notices.
+There are no HTML, CSS, images, fonts, service workers, editors, or PWA assets.
+
+Copy these files to your application's static assets and import
+`/vendor/hieroglyphic/keyboard_api.mjs`. The dictionary's signed-looking
+hash is **an integrity check, not publisher authentication**; serve it from a
+trusted origin and set `expectedSha256`.
+
+Detailed interfaces, error handling and examples:
+**[docs/INTEGRATION.md](docs/INTEGRATION.md)**.
+
+## Source/maintenance layout
+
+| Path | Purpose |
 | --- | --- |
-| `src/keyboard_api.mjs` | Stable v1 headless API: `createKeyboardFromData`, `createHieroglyphicKeyboard` |
-| `src/keyboard_ui.mjs` | Optional `<hieroglyphic-keyboard>` Web Component and edit-request events |
-| `src/keyboard_search.mjs`, `src/_generic_search.mjs` | Canonical Unicode prefix predictor |
-| `src/keyboard_catalog.js` | Single curated sign catalog (27 uniliterals, 151 biliterals, 89 triliterals) |
-| `src/lexicon_install.mjs` | Configurable URL, namespace and verified local-first installer |
-| `release/` | Canonical source-aware data; SQLite master, browser lexicon, matching SHA-256 manifest |
-| `web/` | Optional standalone writing/demo app; consumes the same public API and component |
-| `tools/build_library.py` | Build portable library folder for any project |
-| `tools/build_app.py` | Build optional PWA using the exact portable library |
-
-The API provides `getSigns`, `searchSigns`, `predict`, `validate` and
-`info`. It is DOM-free. The UI emits `hiero-insert`, `hiero-delete` and
-`hiero-replace` events; the host chooses how to apply each requested operation.
-
-**Start with [docs/INTEGRATION.md](docs/INTEGRATION.md)** for real browser
-integration, offline operation, API examples and release pinning.
-
-## Build the portable reusable library
-
-Python 3.12+:
-
-```sh
-python tools/build_keyboard_signs.py --check
-python tools/build_library.py --out dist-library
-```
-
-`dist-library/` contains only the library's modules, font, license, signs,
-manifest and lexicon. Copy that folder into the consuming app under its own
-static asset path. The font is fetched from a pinned **Google Fonts** revision
-at build time; it does not come from Renpet. Supply `--font /path/to/font.ttf`
-for a fully offline build.
-
-## Build the optional standalone PWA
-
-```sh
-python tools/build_app.py --out dist
-cd dist
-python -m http.server 8000
-```
-
-Open `http://localhost:8000/`; publish `dist/` as an HTTPS static website to
-make it installable. The PWA owns only its demo editor and optional service
-worker. It reuses the exact library core and component—there is no second
-keyboard. The browser stores its text locally; export important work before
-clearing site storage.
+| `src/keyboard_api.mjs` | Public headless v2 facade |
+| `src/keyboard_search.mjs` | Sole provenance-aware predictor |
+| `src/keyboard_catalog.js` | Curated Gardiner-code sign catalog |
+| `src/lexicon_install.mjs` | Verified local lexicon storage and updates |
+| `src/compile_lexica.py` | Authoritative historical source compilation |
+| `src/publish_release.py` | Immutable validated JSON/manifest release |
+| `sources/` | Fixed source edition registry and document approvals |
+| `release/` | Auditable SQLite master, JSON lexicon, coverage and manifest |
+| `tools/export_api.py` | Consumer asset package, no application layer |
+| `tests/` | JavaScript API, integrity, provenance and Python pipeline regression tests |
 
 ## Tests
 
@@ -63,36 +88,18 @@ clearing site storage.
 node --test tests/*.test.mjs
 PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
 python -m compileall -q src tools
+python tools/export_api.py --out dist-api
 ```
 
-GitHub Actions checks source sign projection, SQLite/JSON row parity, checksum,
-native Unicode semantics, consumer separation, UI event contract, both build
-artifacts and published module imports. It uploads the portable library and
-the optional standalone PWA as separate artifacts.
+CI verifies the committed JSON and SQLite data row-by-row and builds the
+headless distribution artifact. API v2 is a breaking upgrade from the earlier
+experimental v1 Web Component interface; consumers must migrate deliberately.
 
 ## Evidence and rights
 
-The Late Egyptian release contains **41,330 spelling records** and **40,265
-distinct written forms**. It explicitly does **not** claim complete vocabulary
-coverage. Its 34,144 extra unlinked MaReTE/Ramses word-model forms must not be
-presented as verified lemmas or individual text attestations. The engine
-preserves raw input and the model-source distinction.
-
-The four pinned input lineages are TLA Late Egyptian v19, AED, whitelisted AES
-(CC BY-SA 4.0) and a specific MaReTE training model (CC BY 4.0). ORAEC remains
-unimported. Redistribution must respect dataset rights and attribution.
-The bundled Noto Sans Egyptian Hieroglyphs font is licensed under SIL OFL 1.1
-(`web/OFL-NotoEgyptian.txt`). See
-[docs/UPSTREAM_SOURCE.md](docs/UPSTREAM_SOURCE.md) and
-[sources/README.md](sources/README.md).
-
-The installer checks SHA-256 **integrity**, not publisher authentication.
-The library package has a `1.0.0` interface version but is **not published
-to npm**, and its package metadata prevents accidental publication pending
-explicit redistribution/licensing review.
-
-## Integration scope
-
-Renpet and MdwNfr have **not been modified by this refactor**; they can migrate
-separately to a pinned version of this new API. Existing release file paths and
-`keyboard_search.mjs` exports are preserved for compatibility.
+The four fixed data lineages are TLA Late Egyptian v19, AED, approved AES
+(CC BY-SA 4.0) and the MaReTE Ramses model (CC BY 4.0). See
+[third-party notices](docs/THIRD_PARTY_NOTICES.md),
+[upstream evidence notes](docs/UPSTREAM_SOURCE.md) and
+[sources/README.md](sources/README.md). The repository is not an unrestricted
+license grant for its upstream corpora. No font is redistributed by this API.

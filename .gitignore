@@ -14,3 +14,5 @@ dist.build/
 node_modules/
 coverage/
 .playwright/
+
+dist-api/

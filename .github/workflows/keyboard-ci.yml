@@ -1,4 +1,4 @@
-name: Verify reusable keyboard library and optional demo
+name: Verify headless Egyptian keyboard API
 on:
   push:
     branches: [main]
@@ -18,10 +18,9 @@ jobs:
       - uses: actions/setup-node@v5
         with:
           node-version: '24'
-      - name: Verify canonical release, sign projection and provenance
+      - name: Verify canonical native lexicon, source registry and SQLite parity
         run: |
           set -euo pipefail
-          python tools/build_keyboard_signs.py --check
           PYTHONPATH=src python - <<'PY'
           import hashlib,json,sqlite3
           from pathlib import Path
@@ -30,69 +29,58 @@ jobs:
           assert registry['policy']['complete'] is False
           p=Path('release')
           manifest=json.loads((p/'manifest.json').read_text())
-          raw=(p/'lexicon.json').read_bytes()
-          assert hashlib.sha256(raw).hexdigest()==manifest['sha256']
-          assert len(raw)==manifest['bytes']
-          payload=json.loads(raw)
-          assert manifest['complete'] is False
+          payload_bytes=(p/'lexicon.json').read_bytes()
+          assert hashlib.sha256(payload_bytes).hexdigest()==manifest['sha256']
+          assert len(payload_bytes)==manifest['bytes']
+          payload=json.loads(payload_bytes)
           assert payload['metadata']['complete'] is False
-          assert len(payload['entries'])==manifest['spelling_records']==41330
+          assert manifest['complete'] is False
+          assert len(payload['entries'])==manifest['spelling_records']
+          assert payload['metadata']['spelling_records']==len(payload['entries'])
+          seen=set()
+          for row in payload['entries']:
+              assert row['ref'] not in seen
+              seen.add(row['ref'])
           with sqlite3.connect(p/'lexicon.sqlite3') as db:
               assert db.execute('pragma integrity_check').fetchone()[0]=='ok'
-              count=db.execute('select count(*) from spelling').fetchone()[0]
-              assert count==len(payload['entries'])
               dbrows={r[0]:(r[1],r[2]) for r in db.execute('select id,native_form,frequency from spelling')}
+              assert len(dbrows)==len(payload['entries'])
               assert all(dbrows[e['ref']]==(e['signs'],e['attestations']) for e in payload['entries'])
           provenance=json.loads(Path('SOURCE_PROVENANCE.json').read_text())
           assert provenance['release_sha256']==manifest['sha256']
           PY
-      - name: Native Unicode, API, UI-event and installer unit tests
+      - name: Test public headless API and historical build tools
         run: |
           set -euo pipefail
           node --test tests/*.test.mjs
           PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
           python -m compileall -q src tools
           npm pack --dry-run >/dev/null
-      - name: Build independently reusable static keyboard bundle
+      - name: Build the portable API-only artifact
         run: |
           set -euo pipefail
-          python tools/build_library.py --out dist-library
-          test -f dist-library/keyboard_api.mjs
-          test -f dist-library/keyboard_ui.mjs
-          test -f dist-library/lexicon/lexicon.json
-          test -f dist-library/hiero-font.css
-          test -f dist-library/OFL-NotoEgyptian.txt
-          node --check dist-library/keyboard_api.mjs
-          node --check dist-library/keyboard_ui.mjs
+          python tools/export_api.py --out dist-api
+          test -f dist-api/keyboard_api.mjs
+          test -f dist-api/keyboard_search.mjs
+          test -f dist-api/lexicon/lexicon.json
+          test -f dist-api/THIRD_PARTY_NOTICES.md
+          test ! -f dist-api/index.html
+          test ! -f dist-api/sw.js
+          test ! -f dist-api/keyboard_ui.mjs
+          test ! -f dist-api/font.ttf
+          node --check dist-api/keyboard_api.mjs
+          node --check dist-api/keyboard_search.mjs
+          node --check dist-api/lexicon_install.mjs
           node --input-type=module -e "
-          import {createKeyboardFromData,API_VERSION} from './dist-library/keyboard_api.mjs';
+          import {createKeyboardFromData,API_VERSION} from './dist-api/keyboard_api.mjs';
           const keyboard=createKeyboardFromData();
-          if(keyboard.getSigns('uni').length!==27 || keyboard.searchSigns('M17A')[0].glyph!=='𓇌') process.exit(1);
-          if(API_VERSION!=='1.0.0') process.exit(1);
+          if(API_VERSION!=='2.0.0')process.exit(1);
+          if(keyboard.getSigns('uni').length!==27)process.exit(1);
+          if(keyboard.searchSigns('M17A')[0].glyph!=='𓇌')process.exit(1);
           "
-      - name: Build optional standalone application on same library
-        run: |
-          set -euo pipefail
-          python tools/build_app.py --font dist-library/font.ttf --out dist
-          test -f dist/index.html
-          test -f dist/keyboard_api.mjs
-          test -f dist/keyboard_ui.mjs
-          test -f dist/lexicon/lexicon.json
-          test -f dist/font.ttf
-          node --check dist/app.mjs
-          node --check dist/sw.js
-          cmp dist/keyboard_api.mjs dist-library/keyboard_api.mjs
-          cmp dist/keyboard_ui.mjs dist-library/keyboard_ui.mjs
-          cmp dist/lexicon/lexicon.json dist-library/lexicon/lexicon.json
-      - name: Upload reusable library bundle
+      - name: Upload API-only artifact
         uses: actions/upload-artifact@v4
         with:
-          name: hieroglyphic-keyboard-library-v1
-          path: dist-library/
-          if-no-files-found: error
-      - name: Upload optional standalone demo
-        uses: actions/upload-artifact@v4
-        with:
-          name: hieroglyphic-keyboard-demo-v1
-          path: dist/
+          name: hieroglyphic-keyboard-api-v2
+          path: dist-api/
           if-no-files-found: error

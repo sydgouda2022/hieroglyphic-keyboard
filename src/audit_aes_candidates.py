@@ -16,9 +16,10 @@ def audit(aes,whitelist,candidates,tla):
  tla_counts,_,_=source_rows(tla)
  baseline=set(approved)|set(tla_counts)
  man=json.loads(Path(candidates).read_text())
- assert man['schema']==1 and 'Candidate audit only' in man['purpose']
+ if man.get('schema')!=1 or 'Candidate audit only' not in man.get('purpose',''):
+  raise ValueError('Not an AES candidate-audit manifest')
  items={x['id']:x for x in man['documents']}
- assert len(items)==len(man['documents'])
+ if len(items)!=len(man['documents']):raise ValueError('Duplicate AES candidate ID')
  rows={key:collections.Counter() for key in items}
  meta={key:collections.Counter() for key in items}
  examples=collections.defaultdict(list)

@@ -29,7 +29,7 @@ class Tests(unittest.TestCase):
             aes.write_bytes(raw)
             wl.write_text(json.dumps(whitelist))
             with patch.object(aes_late_adapter,'AES_SAWLIT_SHA',hashlib.sha256(raw).hexdigest()):
-                counts,refs,stats,_=curated_aes_rows(aes,wl)
+                counts,refs,stats,_=curated_aes_rows(aes,wl,verify_whitelist=False)
         self.assertEqual(counts[('200','𓀀𓇓')],2)
         self.assertEqual(len(refs[('200','𓀀𓇓')]),2)
         self.assertEqual(stats['rejected_wrong_date'],1)

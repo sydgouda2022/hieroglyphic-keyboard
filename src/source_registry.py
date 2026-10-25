@@ -7,6 +7,7 @@ restricted Ramses bulk manuscript dataset. ORAEC remains unimported.
 from __future__ import annotations
 import hashlib
 import json
+import re
 from pathlib import Path
 
 REGISTRY=Path(__file__).resolve().parents[1]/"sources/late_egyptian_registry.json"
@@ -19,7 +20,7 @@ def read_registry(path:Path=REGISTRY)->dict:
     for entry in data.get("sources",[]):
         if not all(entry.get(f) for f in ("id","sha256","license","url","lineage","identity")):
             raise ValueError("Incomplete source provenance")
-        if entry["id"] in ids or len(entry["sha256"])!=64:
+        if entry["id"] in ids or not re.fullmatch(r'[0-9a-f]{64}',entry["sha256"]):
             raise ValueError("Duplicate or invalid source fingerprint")
         ids.add(entry["id"])
     if ids!={"TLA-LE19","AED-TEI","AES-LATE-CURATED","RAMSES-WORD-MODEL-2023"}:

@@ -1,38 +1,36 @@
 {
   "name": "@sydgouda/hieroglyphic-keyboard",
-  "version": "1.0.0",
+  "version": "2.0.0",
+  "description": "Headless, offline-capable Egyptian Unicode hieroglyphic keyboard API",
   "private": true,
   "type": "module",
-  "description": "Offline-first Egyptian Unicode hieroglyphic keyboard core and optional Web Component",
   "sideEffects": false,
+  "engines": { "node": ">=20" },
   "exports": {
     ".": "./src/keyboard_api.mjs",
     "./core": "./src/keyboard_api.mjs",
-    "./ui": "./src/keyboard_ui.mjs",
+    "./search": "./src/keyboard_search.mjs",
     "./installer": "./src/lexicon_install.mjs",
     "./catalog": "./src/keyboard_catalog.js",
-    "./search": "./src/keyboard_search.mjs",
-    "./manifest": "./release/manifest.json",
-    "./signs": "./release/signs.json",
-    "./lexicon": "./release/lexicon.json"
+    "./data/manifest": "./release/manifest.json",
+    "./data/lexicon": "./release/lexicon.json",
+    "./data/coverage": "./release/coverage.json"
   },
   "files": [
     "src/keyboard_api.mjs",
-    "src/keyboard_ui.mjs",
     "src/keyboard_search.mjs",
-    "src/_generic_search.mjs",
     "src/keyboard_catalog.js",
     "src/lexicon_install.mjs",
     "release/manifest.json",
     "release/lexicon.json",
-    "release/signs.json",
-    "web/OFL-NotoEgyptian.txt",
+    "release/coverage.json",
     "README.md",
-    "docs/INTEGRATION.md"
+    "docs/INTEGRATION.md",
+    "docs/UPSTREAM_SOURCE.md",
+    "docs/THIRD_PARTY_NOTICES.md",
+    "sources/README.md",
+    "sources/late_egyptian_registry.json"
   ],
-  "engines": {
-    "node": ">=20"
-  },
   "scripts": {
     "test": "node --test tests/*.test.mjs"
   }

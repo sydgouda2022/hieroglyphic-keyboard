@@ -6,11 +6,13 @@ from pathlib import Path
 ROOT=Path(__file__).resolve().parents[1]
 sys.path.insert(0,str(ROOT/"src"))
 from publish_release import publish
+from source_registry import read_registry
 
 class PublisherTests(unittest.TestCase):
     def sample(self):
         return {"format":"mdwnfr-predict-v1",
-            "metadata":{"stage":"Late Egyptian","complete":False,"spelling_records":1},
+            "metadata":{"stage":"Late Egyptian","complete":False,"spelling_records":1,
+                        "tla_sha256":read_registry()['sources'][0]['sha256']},
             "entries":[{"ref":"tla:1","signs":"𓄿𓂝","source":"TLA-LE19","attestations":1}]}
     def test_atomic_first_publish_and_no_overwrite(self):
         with tempfile.TemporaryDirectory() as temp:
