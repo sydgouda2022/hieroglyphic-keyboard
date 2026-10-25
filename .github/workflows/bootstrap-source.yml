@@ -81,7 +81,12 @@ jobs:
           set -euo pipefail
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add README.md src tests sources tools release docs SOURCE_PROVENANCE.json
+          cat > .gitignore <<'EOF'
+          __pycache__/
+          *.pyc
+          EOF
+          git rm -r --cached --ignore-unmatch src/__pycache__ tests/__pycache__
+          git add README.md src tests sources tools release releases docs SOURCE_PROVENANCE.json .gitignore
           git diff --cached --quiet && exit 0
           git commit -m 'Import and verify independent hieroglyphic keyboard and lexicon'
           git push origin HEAD:main
