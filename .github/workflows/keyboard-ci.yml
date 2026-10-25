@@ -1,4 +1,4 @@
-name: Audit and package standalone Hieroglyphic Keyboard
+name: Verify reusable keyboard library and optional demo
 on:
   push:
     branches: [main]
@@ -9,7 +9,7 @@ permissions:
 jobs:
   audit:
     runs-on: ubuntu-24.04
-    timeout-minutes: 20
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -46,28 +46,53 @@ jobs:
           provenance=json.loads(Path('SOURCE_PROVENANCE.json').read_text())
           assert provenance['release_sha256']==manifest['sha256']
           PY
-      - name: Native Unicode predictor and installer regression tests
+      - name: Native Unicode, API, UI-event and installer unit tests
         run: |
           set -euo pipefail
           node --test tests/*.test.mjs
           PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
           python -m compileall -q src tools
-      - name: Build standalone offline-capable web application
+          npm pack --dry-run >/dev/null
+      - name: Build independently reusable static keyboard bundle
         run: |
           set -euo pipefail
-          python tools/build_app.py --out dist
+          python tools/build_library.py --out dist-library
+          test -f dist-library/keyboard_api.mjs
+          test -f dist-library/keyboard_ui.mjs
+          test -f dist-library/lexicon/lexicon.json
+          test -f dist-library/hiero-font.css
+          test -f dist-library/OFL-NotoEgyptian.txt
+          node --check dist-library/keyboard_api.mjs
+          node --check dist-library/keyboard_ui.mjs
+          node --input-type=module -e "
+          import {createKeyboardFromData,API_VERSION} from './dist-library/keyboard_api.mjs';
+          const keyboard=createKeyboardFromData();
+          if(keyboard.getSigns('uni').length!==27 || keyboard.searchSigns('M17A')[0].glyph!=='𓇌') process.exit(1);
+          if(API_VERSION!=='1.0.0') process.exit(1);
+          "
+      - name: Build optional standalone application on same library
+        run: |
+          set -euo pipefail
+          python tools/build_app.py --font dist-library/font.ttf --out dist
           test -f dist/index.html
-          test -f dist/_generic_search.mjs
+          test -f dist/keyboard_api.mjs
+          test -f dist/keyboard_ui.mjs
           test -f dist/lexicon/lexicon.json
           test -f dist/font.ttf
-          test -f dist/OFL-NotoEgyptian.txt
           node --check dist/app.mjs
           node --check dist/sw.js
-          node --check dist/keyboard_search.mjs
-          node --check dist/lexicon_install.mjs
-      - name: Upload standalone PWA build
+          cmp dist/keyboard_api.mjs dist-library/keyboard_api.mjs
+          cmp dist/keyboard_ui.mjs dist-library/keyboard_ui.mjs
+          cmp dist/lexicon/lexicon.json dist-library/lexicon/lexicon.json
+      - name: Upload reusable library bundle
         uses: actions/upload-artifact@v4
         with:
-          name: hieroglyphic-keyboard-static-site
+          name: hieroglyphic-keyboard-library-v1
+          path: dist-library/
+          if-no-files-found: error
+      - name: Upload optional standalone demo
+        uses: actions/upload-artifact@v4
+        with:
+          name: hieroglyphic-keyboard-demo-v1
           path: dist/
           if-no-files-found: error

@@ -1,0 +1,39 @@
+{
+  "name": "@sydgouda/hieroglyphic-keyboard",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Offline-first Egyptian Unicode hieroglyphic keyboard core and optional Web Component",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/keyboard_api.mjs",
+    "./core": "./src/keyboard_api.mjs",
+    "./ui": "./src/keyboard_ui.mjs",
+    "./installer": "./src/lexicon_install.mjs",
+    "./catalog": "./src/keyboard_catalog.js",
+    "./search": "./src/keyboard_search.mjs",
+    "./manifest": "./release/manifest.json",
+    "./signs": "./release/signs.json",
+    "./lexicon": "./release/lexicon.json"
+  },
+  "files": [
+    "src/keyboard_api.mjs",
+    "src/keyboard_ui.mjs",
+    "src/keyboard_search.mjs",
+    "src/_generic_search.mjs",
+    "src/keyboard_catalog.js",
+    "src/lexicon_install.mjs",
+    "release/manifest.json",
+    "release/lexicon.json",
+    "release/signs.json",
+    "web/OFL-NotoEgyptian.txt",
+    "README.md",
+    "docs/INTEGRATION.md"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test tests/*.test.mjs"
+  }
+}

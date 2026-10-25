@@ -34,25 +34,10 @@
     <button id="clear" type="button" class="danger">Clear</button>
   </div>
  </section>
- <section class="predict-panel" aria-label="Suggestions">
-   <div class="section-title compact"><h2>Word suggestions</h2><small id="lexicon-label">Checking local dictionary…</small></div>
-   <div id="suggestions" class="suggestions" role="listbox" aria-label="Hieroglyphic word suggestions"><span class="hint">Start typing a word to see suggestions.</span></div>
- </section>
- <section class="keyboard-panel" aria-label="Hieroglyphic sign keyboard">
-  <div class="keyboard-heading"><div><h2>Signs</h2><p>Tap to insert at the cursor. Search by Gardiner code.</p></div><label class="searchbox"><span class="sr-only">Search signs by Gardiner code</span><input id="sign-search" type="search" placeholder="Find G17, M17A…" aria-label="Search signs by Gardiner code"></label></div>
-  <div class="tabs" role="tablist" aria-label="Phonogram classes">
-    <button type="button" role="tab" id="tab-uni" data-tab="uni" aria-controls="sign-grid" aria-selected="true">Uniliteral</button>
-    <button type="button" role="tab" id="tab-bi" data-tab="bi" aria-controls="sign-grid" aria-selected="false">Biliteral</button>
-    <button type="button" role="tab" id="tab-tri" data-tab="tri" aria-controls="sign-grid" aria-selected="false">Triliteral</button>
-  </div>
-  <div id="sign-grid" class="sign-grid" role="tabpanel" aria-labelledby="tab-uni"></div>
-  <div class="insert-tools" aria-label="Editing signs">
-    <button type="button" data-insert=" " aria-label="Insert space">Space</button>
-    <button type="button" data-insert="𓐰" title="Vertical joiner">↧ Stack</button>
-    <button type="button" data-insert="𓐱" title="Horizontal joiner">⇥ Join</button>
-    <button type="button" id="backspace" aria-label="Delete preceding grapheme">⌫ Delete</button>
-  </div>
-  <div class="tip">Suggestions come from a documented, incomplete Late Egyptian corpus. Model-only sign sequences are marked RTC. Input is never silently corrected.</div>
+ <section class="keyboard-panel" aria-label="Reusable Hieroglyphic Keyboard">
+  <div class="section-title"><h2>Keyboard component</h2><small id="lexicon-label">Checking local dictionary…</small></div>
+  <hieroglyphic-keyboard id="keyboard-ui"></hieroglyphic-keyboard>
+  <p class="tip">This is the same embeddable component available to Renpet, MdwNfr, and future apps. Word-model-only suggestions are marked RTC.</p>
  </section>
 </main>
 <footer>Independent, local-first writing app · <a href="https://github.com/sydgouda2022/hieroglyphic-keyboard" target="_blank" rel="noopener noreferrer">Source & credits</a> · <span id="version">v1</span></footer>

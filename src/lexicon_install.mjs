@@ -3,7 +3,6 @@ export const DB_NAME='egyptian-lexicon-install-v1';
 export const MANIFEST_URL=new URL('./lexicon/manifest.json',import.meta.url).href;
 export const PAYLOAD_URL=new URL('./lexicon/lexicon.json',import.meta.url).href;
 const FORMAT='egyptian-lexicon-install-v1';
-let inFlight=null;
 const hex=buffer=>Array.from(new Uint8Array(buffer),b=>b.toString(16).padStart(2,'0')).join('');
 const hash=async bytes=>hex(await crypto.subtle.digest('SHA-256',bytes));
 const SIGN=cp=>(cp>=0x13000&&cp<=0x1342f)||(cp>=0x13460&&cp<=0x143ff);
@@ -102,26 +101,28 @@ async function readResponse(url,fetcher,timeoutMs,method){
   ]);
  }finally{clearTimeout(timer);}
 }
-async function download(manifest,fetcher,timeoutMs){
- const bytes=await readResponse(PAYLOAD_URL,fetcher,timeoutMs,'arrayBuffer');
+async function download(manifest,fetcher,timeoutMs,payloadUrl){
+ const bytes=await readResponse(payloadUrl,fetcher,timeoutMs,'arrayBuffer');
  if(bytes.byteLength!==manifest.bytes||await hash(bytes)!==manifest.sha256)throw Error('Downloaded lexicon checksum mismatch');
  const slot={manifest,bytes};
  if(!await validateSlot(slot))throw Error('Downloaded lexicon failed structural verification');
  return slot;
 }
 /** Failure to update must never erase the last verified local release. */
-export async function ensureLexiconImpl({store=idbStore(),fetcher=fetch,online=true,timeoutMs=6000}={}){
+export async function ensureLexiconImpl({store=idbStore(),fetcher=fetch,online=true,timeoutMs=6000,
+ manifestUrl=MANIFEST_URL,payloadUrl=PAYLOAD_URL}={}){
+ if(!manifestUrl||!payloadUrl||typeof fetcher!=='function')throw new TypeError('Lexicon URLs and fetcher are required');
  const saved=await store.read();
  let active=await validateSlot(saved.active),previous=await validateSlot(saved.previous);
  let recovered=false;
  if(!active&&previous){await store.restore(previous.slot);active=previous;recovered=true;}
  let remote=null;
  if(online||!active){
-  try{remote=validateManifest(await readResponse(MANIFEST_URL,fetcher,active?2000:timeoutMs,'json'));}
+  try{remote=validateManifest(await readResponse(manifestUrl,fetcher,active?2000:timeoutMs,'json'));}
   catch(e){if(!active)throw Error('Lexicon unavailable and no verified local copy: '+String(e?.message||e));}
  }
  if(remote&&(!active||remote.sha256!==active.slot.manifest.sha256)){
-  try{const next=await download(remote,fetcher,timeoutMs);await store.activate(next,active?.slot||null);
+  try{const next=await download(remote,fetcher,timeoutMs,payloadUrl);await store.activate(next,active?.slot||null);
    active=await validateSlot(next);recovered=false;
   }catch(e){if(!active)throw Error('Lexicon download/repair failed: '+String(e?.message||e));}
  }
@@ -131,6 +132,5 @@ export async function ensureLexiconImpl({store=idbStore(),fetcher=fetch,online=t
   complete:active.slot.manifest.complete};
 }
 export function ensureLexicon(options={}){
- if(!inFlight)inFlight=ensureLexiconImpl({...options,online:options.online??(typeof navigator==='undefined'||navigator.onLine!==false)}).finally(()=>{inFlight=null;});
- return inFlight;
+ return ensureLexiconImpl({...options,online:options.online??(typeof navigator==='undefined'||navigator.onLine!==false)});
 }
