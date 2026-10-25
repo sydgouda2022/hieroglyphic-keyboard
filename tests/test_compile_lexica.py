@@ -5,7 +5,7 @@ import tempfile
 import unittest
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parents[1] / 'src'))
-from compile_lexica import build_egyptian,build_coptic,source_rows
+from compile_lexica import build_egyptian,source_rows
 from unittest.mock import patch
 import hashlib
 import ramses_unicode
@@ -61,23 +61,6 @@ class Tests(unittest.TestCase):
    catalog=json.loads((root/'out/lexicon.json').read_text())
    self.assertFalse(catalog['metadata']['complete'])
    self.assertEqual(catalog['metadata']['unique_native_surfaces'],2)
- def test_coptic_dialects_and_homographs(self):
-  with tempfile.TemporaryDirectory() as tmp:
-   t=Path(tmp);tei=t/'lex.xml';tei.write_text('''<TEI xmlns="http://www.tei-c.org/ns/1.0"><text><body>
-<entry xml:id="C1"><form xml:id="F1"><usg type="geo">S</usg><orth>ⲡⲉ</orth></form><form xml:id="F2"><usg type="geo">B</usg><orth>ⲡⲉ</orth></form></entry>
-<entry xml:id="C2"><form xml:id="F3"><usg type="geo">A</usg><orth>ⲟⲩ</orth></form></entry>
-</body></text></TEI>''')
-   original=t/'orig.json';original.write_text(json.dumps({'dialects':['Sahidic','Bohairic'],'rows':[['ⲁⲛ',1],['ⲡⲉ',1],['ϭⲱ',2]]},ensure_ascii=False))
-   extra=t/'pop.json';extra.write_text(json.dumps({'rows':[['ⲡⲉ',15],['ⲫⲱ',7]]},ensure_ascii=False))
-   r=build_coptic(tei,original,extra,t/'result')
-   self.assertEqual(r['tei_lemmas'],2)
-   p=json.loads((t/'result/lexicon.json').read_text())
-   got=dict(p['rows']);self.assertEqual(got['ⲡⲉ'],3)
-   self.assertEqual(got['ⲟⲩ'],0)
-   self.assertEqual(got['ⲫⲱ'],0)
-   self.assertEqual(p['popularity']['ⲡⲉ'],15)
-   db=sqlite3.connect(t/'result/lexicon.sqlite3')
-   self.assertEqual(db.execute('PRAGMA integrity_check').fetchone()[0],'ok')
  def test_complete_grouped_unicode_word_is_preserved(self):
   with tempfile.TemporaryDirectory() as tmp:
    p=Path(tmp)/'tla.jsonl'

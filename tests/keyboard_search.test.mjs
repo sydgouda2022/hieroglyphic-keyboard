@@ -1,6 +1,6 @@
 import {test} from 'node:test';
 import assert from 'node:assert/strict';
-import {keyboardKey,prepareKeyboardIndex,predictKeyboard} from '../src/keyboard_search.mjs';
+import {keyboardKey,prepareKeyboardIndex,predictKeyboard} from '../src/_generic_search.mjs';
 
 const cop=prepareKeyboardIndex('cop',{rows:[
  ['ⲡⲉ',1],['ⲡⲓ',2],['ⲡⲱ',3],['ⲡⲕ',0],['ⲡⲉ̄',1]],popularity:{'ⲡⲉ':10,'ⲡⲓ':15}});
