@@ -4,11 +4,10 @@ import {History,wordRange,replaceRange,backspaceRange} from './editor-core.mjs';
 
 const $=id=>document.getElementById(id);
 const STORAGE='hieroglyphic-keyboard.workspace.v1';
-const CURRENT='hieroglyphic-keyboard.v1';
 const editor=$('editor'),count=$('character-count'),suggestions=$('suggestions'),status=$('storage-state'),lexiconLabel=$('lexicon-label');
 const grid=$('sign-grid'),search=$('sign-search');
-let pages=null,tab='uni',index=null,ready=false,installEvent=null,toastTimer=null;
-let lastSave=0,saveTimer=null,renderPending=false;
+let pages=null,tab='uni',index=null,installEvent=null,toastTimer=null;
+let saveTimer=null,renderPending=false;
 let savedCaret={start:0,end:0};
 try{editor.value=localStorage.getItem(STORAGE)||'';}catch{}
 const history=new History({value:editor.value,start:editor.value.length,end:editor.value.length});
@@ -27,7 +26,7 @@ function rememberSelection(){
  if(document.activeElement===editor)savedCaret={start:editor.selectionStart,end:editor.selectionEnd};
 }
 function persist(){
- clearTimeout(saveTimer);lastSave=Date.now();
+ clearTimeout(saveTimer);
  try{localStorage.setItem(STORAGE,editor.value);}
  catch{notice('Device storage is unavailable; export your text to keep it.');}
 }
@@ -36,7 +35,7 @@ function changed(push=true){
  count.textContent=[...editor.value].length+' characters';
  $('undo').disabled=!history.canUndo;$('redo').disabled=!history.canRedo;
  rememberSelection();
- if(Date.now()-lastSave>700)saveTimer=setTimeout(persist,500);
+ clearTimeout(saveTimer);saveTimer=setTimeout(persist,500);
  schedulePredictions();
 }
 function splice(text,start=editor.selectionStart,end=editor.selectionEnd){
@@ -121,11 +120,10 @@ async function loadLexicon(){
  try{
   const installed=await ensureLexicon();
   index=prepareKeyboardIndex('egy',installed.payload);
-  ready=true;
   status.textContent='Dictionary ready'+(installed.complete?'':' · incomplete');
   lexiconLabel.textContent=index.rows.length.toLocaleString()+' spelling records · '+installed.status;
  }catch(error){
-  ready=false;index=null;status.textContent='Dictionary unavailable';
+  index=null;status.textContent='Dictionary unavailable';
   lexiconLabel.textContent='Raw writing still works · retry below';
   notice('Dictionary unavailable: '+String(error.message||error));
   const retry=document.createElement('button');retry.type='button';retry.textContent='Retry lexicon';retry.className='soft';
@@ -156,6 +154,12 @@ $('copy').addEventListener('click',async()=>{
  try{await navigator.clipboard.writeText(text);notice('Copied to clipboard');}
  catch{editor.focus();editor.select();notice('Copy selected text using your device menu');}
 });
+$('cut').addEventListener('click',async()=>{
+ const s=editor.selectionStart,e=editor.selectionEnd,text=editor.value.slice(s,e);
+ if(!text){notice('Select text to cut');return;}
+ try{await navigator.clipboard.writeText(text);splice('',s,e);notice('Cut to clipboard');}
+ catch{notice('Clipboard blocked — use the system Cut menu');editor.focus();}
+});
 $('paste').addEventListener('click',async()=>{
  try{const t=await navigator.clipboard.readText();if(t)splice(t,savedCaret.start,savedCaret.end);}
  catch{editor.focus();notice('Use the system Paste menu if clipboard permission is unavailable');}
@@ -182,7 +186,7 @@ document.querySelectorAll('[data-tab]').forEach(button=>button.addEventListener(
 }));
 search.addEventListener('input',drawGrid);
 window.addEventListener('pagehide',persist);
-window.addEventListener('visibilitychange',()=>{if(document.hidden)persist();});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)persist();});
 if('serviceWorker' in navigator)window.addEventListener('load',()=>{
  navigator.serviceWorker.register('./sw.js').catch(()=>notice('Offline mode could not be registered'));
 });

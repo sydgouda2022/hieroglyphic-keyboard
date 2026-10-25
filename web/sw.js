@@ -19,12 +19,14 @@ self.addEventListener('fetch',e=>{
  e.respondWith((async()=>{
   const cache=await caches.open(VERSION);
   const found=await cache.match(e.request,{ignoreSearch:true});
-  if(found)return found;
+  const isLexicon=url.pathname.endsWith('/lexicon/manifest.json')||url.pathname.endsWith('/lexicon/lexicon.json');
+  if(found&&!isLexicon)return found;
   try{
-   const response=await fetch(e.request);
+   const response=await fetch(e.request,isLexicon?{cache:'no-store'}:undefined);
    if(response.ok) e.waitUntil(cache.put(e.request,response.clone()).catch(()=>{}));
    return response;
   }catch{
+   if(found)return found;
    if(e.request.mode==='navigate')return await cache.match('./index.html')||Response.error();
    return new Response('Offline asset unavailable',{status:503});
   }

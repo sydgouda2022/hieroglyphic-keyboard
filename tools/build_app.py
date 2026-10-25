@@ -52,6 +52,22 @@ def build(output: Path, font_file: Path | None = None) -> dict:
         for name in ("manifest.json", "lexicon.json", "coverage.json"):
             shutil.copy2(ROOT / "release" / name, stage / "lexicon" / name)
         (stage / "font.ttf").write_bytes(font)
+        # Source and release content determine the SW cache identity, not a manual version.
+        checks=("index.html","styles.css","app.mjs","editor-core.mjs",
+                "keyboard_search.mjs","_generic_search.mjs","lexicon_install.mjs",
+                "signs.json","lexicon/manifest.json")
+        digest=hashlib.sha256()
+        for item in checks:
+            digest.update(item.encode())
+            digest.update((stage / item).read_bytes())
+        worker=stage / "sw.js"
+        contents=worker.read_text(encoding="utf-8")
+        marker="const VERSION='hieroglyphic-keyboard-v1';"
+        if contents.count(marker)!=1:
+            raise ValueError("Service worker version marker missing")
+        worker.write_text(contents.replace(marker,
+            "const VERSION='hieroglyphic-keyboard-"+digest.hexdigest()[:16]+"';"),
+            encoding="utf-8")
         stage.rename(output)
     except Exception:
         if stage.exists():

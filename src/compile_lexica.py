@@ -238,7 +238,7 @@ def build_egyptian(tla_path,aed_path,out,aes_path=None,aes_whitelist=None,ramses
     missing=db.execute('SELECT COUNT(*) FROM spelling s WHERE NOT EXISTS(SELECT 1 FROM attestation a WHERE a.spelling_id=s.id)').fetchone()[0]
     assert missing==0,'Every written form must retain an attestation'
     match_count=db.execute("SELECT COUNT(*) FROM lemma WHERE headword != ''").fetchone()[0]
-    distinct_verified_lemmas=len({e['lemma'] for e in entries if not e['lemma'].startswith('ramses-unlinked:')})
+    distinct_verified_lemmas=len({e['lemma'] for e in entries if not e['lemma'].startswith(('ramses-unlinked:','unresolved:'))})
     native_surfaces=len({e['signs'] for e in entries})
     db.close()
     sources={'TLA-LE19':sha_tla,'AED-TEI':sha_aed}

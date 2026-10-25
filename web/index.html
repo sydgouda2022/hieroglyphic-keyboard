@@ -22,11 +22,12 @@
 <main>
  <section class="writing" aria-label="Writing workspace">
   <div class="section-title"><div><h2>Writing surface</h2><p>Your text stays on this device.</p></div><span id="character-count" class="muted">0 signs</span></div>
-  <textarea id="editor" lang="egy" dir="ltr" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" aria-label="Hieroglyphic writing surface" placeholder="𓄿𓈖𓎛 — Tap a sign to begin"></textarea>
+  <textarea id="editor" lang="egy" dir="ltr" spellcheck="false" autocorrect="off" autocomplete="off" autocapitalize="off" inputmode="none" aria-label="Hieroglyphic writing surface" placeholder="𓄿𓈖𓎛 — Tap a sign to begin"></textarea>
   <div class="toolbar" aria-label="Document tools">
     <button id="undo" type="button" title="Undo (Ctrl/⌘ Z)">↶ Undo</button>
     <button id="redo" type="button" title="Redo (Ctrl/⌘ Shift Z)">↷ Redo</button>
     <button id="copy" type="button">Copy</button>
+    <button id="cut" type="button">Cut</button>
     <button id="paste" type="button">Paste</button>
     <button id="select-all" type="button">Select all</button>
     <button id="export" type="button">Export .txt</button>
