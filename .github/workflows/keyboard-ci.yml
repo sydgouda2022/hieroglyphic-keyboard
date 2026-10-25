@@ -42,4 +42,5 @@ jobs:
         run: |
           set -euo pipefail
           node --test tests/keyboard_search.test.mjs tests/predict.test.mjs tests/lexicon_install.test.mjs
+          PYTHONPATH=src python -m unittest discover -s tests -p 'test_*.py' -v
           python -m compileall -q src
