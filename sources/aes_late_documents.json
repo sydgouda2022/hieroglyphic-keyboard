@@ -1,0 +1,80 @@
+{
+  "schema": 1,
+  "description": "Document-level conservative AES Late Egyptian whitelist; no date-only additions",
+  "edition": "AES 35276d2527cca1a055e31ed5f6683e777717170f",
+  "documents": [
+    {
+      "id": "W25WDE27ZVAFXBDULVGJH7CHUQ",
+      "title": "The Contendings of Horus and Seth",
+      "document": "Papyrus Chester Beatty I, recto",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Established Ramesside Late Egyptian literary narrative"
+    },
+    {
+      "id": "MTBRL3MIIJDKXAOF2336WRLMZA",
+      "title": "The Doomed Prince",
+      "document": "Papyrus Harris 500, verso",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "New Kingdom Late Egyptian literary narrative"
+    },
+    {
+      "id": "SSS2W6HDXFA23OBG2ER6DYGGCY",
+      "title": "The Taking of Joppa",
+      "document": "Papyrus Harris 500, verso",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Ramesside Late Egyptian literary narrative"
+    },
+    {
+      "id": "YSMXWV2H3NBALAHHT6CK3FNKGE",
+      "title": "The Satirical Letter of Hori",
+      "document": "Papyrus Anastasi I",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Ramesside Late Egyptian letter genre"
+    },
+    {
+      "id": "HSPTIJABEREHFI6HCEUABYSFGE",
+      "title": "The Report of Wenamun",
+      "document": "Papyrus Moscow 120",
+      "allowed_dates": [
+        "TIP - Roman times",
+        "NK"
+      ],
+      "stage_basis": "Late Egyptian literary narrative Third Intermediate Period"
+    },
+    {
+      "id": "6AJKKZU4XNHPPHYHC3WDPXRP4Q",
+      "title": "Apophis and Seqenenre",
+      "document": "Papyrus Sallier I",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Ramesside Late Egyptian literary tale"
+    },
+    {
+      "id": "C6HNRC4K7FAYBHNDS3LV24EANI",
+      "title": "The Tale of Two Brothers",
+      "document": "Papyrus D'Orbiney (BM EA 10183), recto",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Ramesside Late Egyptian literary narrative"
+    },
+    {
+      "id": "5UEPUHOXE5CCRF5VQGC4V7SQWQ",
+      "title": "Truth and Falsehood",
+      "document": "Papyrus Chester Beatty II",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Ramesside Late Egyptian literary narrative"
+    }
+  ]
+}

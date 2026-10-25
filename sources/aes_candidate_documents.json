@@ -1,0 +1,88 @@
+{
+  "schema": 1,
+  "edition": "AES 35276d2527cca1a055e31ed5f6683e777717170f",
+  "purpose": "Candidate audit only: no direct import permitted until reviewed",
+  "documents": [
+    {
+      "id": "LKHDBPGV3BF2TKDYQKKCLGRB2Y",
+      "title": "Harris 500 love songs, group 1–8",
+      "document": "Papyrus Harris 500, recto 1–4",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "BPDD4GCB5FFWBFALLSNU34H5EA",
+      "title": "Harris 500 love songs, group 9–16",
+      "document": "Papyrus Harris 500, recto 4–6",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "6XPQVMR7ONHF5LQ7FU5QARPW2U",
+      "title": "Harris 500 love songs, group 17–19",
+      "document": "Papyrus Harris 500, recto 7–8",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "DBQY73AUXNHBHP7IQGJU27TXKQ",
+      "title": "Harris 500 love songs, group 19A–B",
+      "document": "Papyrus Harris 500, recto 8",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "7SHAMTWA7RHSTHNZFXN2TKMCUA",
+      "title": "Love song on Ostracon Borchardt 1",
+      "document": "Ostracon Borchardt 1",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "MONPMK34DRBXPDAGLQFEYLOKUY",
+      "title": "Love song on Ostracon Cairo CG 25761",
+      "document": "Ostracon Cairo CG 25761",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "UY77AESTSBF67GCWOLSNBCKNJA",
+      "title": "Love song on Ostracon Deir el-Medina 1079",
+      "document": "Ostracon Deir el-Medina 1079",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "Q6JYENCDTNGZ7FEEPGZQAH66KI",
+      "title": "Papyrus Lansing, praise of scribes",
+      "document": "Papyrus Lansing (BM EA 9994), recto 1–2",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    },
+    {
+      "id": "7EVMVQOFQ5C7DFJHB65EQAHQ4A",
+      "title": "Papyrus Anastasi III, scribal instruction",
+      "document": "Papyrus Anastasi III, recto 3.9–4.4",
+      "allowed_dates": [
+        "NK"
+      ],
+      "stage_basis": "Candidate New Kingdom/Ramesside Late Egyptian text for individual review"
+    }
+  ]
+}
